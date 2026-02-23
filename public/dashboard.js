@@ -34,6 +34,12 @@ document.addEventListener('DOMContentLoaded', () => {
   loadUserInfo();
   loadPage('dashboard');
   setupNavigation();
+
+  // Event listeners вместо inline handlers
+  document.getElementById('closeSidebarBtn').addEventListener('click', toggleSidebar);
+  document.getElementById('sidebarOverlay').addEventListener('click', toggleSidebar);
+  document.getElementById('burgerMenuBtn').addEventListener('click', toggleSidebar);
+  document.getElementById('logoutBtn').addEventListener('click', handleLogout);
 });
 
 // Проверка авторизации

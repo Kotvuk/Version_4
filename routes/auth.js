@@ -34,11 +34,19 @@ router.post('/login', asyncHandler(async (req, res) => {
   }
 }));
 
+// Валидация email
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 // POST /api/auth/register
 router.post('/register', asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ success: false, error: 'Все поля обязательны' });
+  }
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ success: false, error: 'Некорректный формат email' });
   }
   if (password.length < 6) {
     return res.status(400).json({ success: false, error: 'Пароль должен содержать минимум 6 символов' });
@@ -70,6 +78,7 @@ router.get('/logout', (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
+    signed: true,
   });
   res.json({ success: true, message: 'Выход выполнен' });
 });

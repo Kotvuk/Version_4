@@ -13,7 +13,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <h2>KotvukAI</h2>
-      <button class="close-sidebar" onclick="toggleSidebar()">
+      <button class="close-sidebar" id="closeSidebarBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
@@ -112,7 +112,7 @@
           <p class="user-email" id="userEmail">email@example.com</p>
         </div>
       </div>
-      <button class="logout-btn" onclick="handleLogout()">
+      <button class="logout-btn" id="logoutBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
           <polyline points="16 17 21 12 16 7"/>
@@ -124,13 +124,13 @@
   </aside>
 
   <!-- Overlay для закрытия sidebar при клике вне его -->
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!-- Основной контент -->
   <main class="main-content">
     <!-- Верхняя панель -->
     <header class="topbar">
-      <button class="burger-menu" onclick="toggleSidebar()">
+      <button class="burger-menu" id="burgerMenuBtn">
         <span></span>
         <span></span>
         <span></span>

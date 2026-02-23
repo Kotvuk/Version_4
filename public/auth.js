@@ -1,3 +1,25 @@
+// ===== Инициализация через addEventListener (без inline handlers) =====
+document.addEventListener('DOMContentLoaded', () => {
+  // Формы
+  document.getElementById('loginFormEl').addEventListener('submit', handleLogin);
+  document.getElementById('registerFormEl').addEventListener('submit', handleRegister);
+
+  // Переключение форм
+  document.querySelectorAll('[data-switch]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchForm(el.getAttribute('data-switch'));
+    });
+  });
+
+  // Показ/скрытие пароля
+  document.querySelectorAll('[data-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      togglePassword(btn.getAttribute('data-toggle'));
+    });
+  });
+});
+
 // Переключение между формами входа и регистрации
 function switchForm(formType) {
   const loginForm = document.getElementById('loginForm');
