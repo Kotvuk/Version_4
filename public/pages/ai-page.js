@@ -228,7 +228,7 @@ async function loadMarketCapWidget() {
     if (subEl) {
       const change = data.marketCapChange24h;
       const up = change >= 0;
-      subEl.innerHTML = `${up ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}% за 24ч &nbsp;•&nbsp; BTC: ${data.btcDominance.toFixed(1)}%`;
+      subEl.textContent = `${up ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}% за 24ч  •  BTC: ${data.btcDominance.toFixed(1)}%`;
       subEl.style.color = up ? '#22c55e' : '#ef4444';
     }
   } catch (e) {
@@ -431,18 +431,20 @@ function assetOptionHTML(symbol, name) {
     PEPE:'#4a8c3f', SHIB:'#ffa409', ARB:'#28a0f0', OP:'#ff0420', FIL:'#0090ff',
   };
   const color = colors[symbol] || '#3b82f6';
+  const safeSymbol = escapeHtml(symbol);
+  const safeName = escapeHtml(name);
 
   return `
-    <div onclick="selectAIAsset('${symbol}')"
+    <div onclick="selectAIAsset('${safeSymbol}')"
       style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 1rem;cursor:pointer;transition:background 0.15s;"
       onmouseover="this.style.background='rgba(255,255,255,0.06)'"
       onmouseout="this.style.background='transparent'">
       <div style="width:28px;height:28px;border-radius:6px;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;font-family:'Space Grotesk',sans-serif;flex-shrink:0;">
-        ${symbol.slice(0, 2)}
+        ${safeSymbol.slice(0, 2)}
       </div>
       <div>
-        <span style="color:#fff;font-weight:600;font-size:0.9rem;">${symbol}</span>
-        <span style="color:rgba(255,255,255,0.35);font-size:0.8rem;margin-left:0.5rem;">${name !== symbol ? name : ''}</span>
+        <span style="color:#fff;font-weight:600;font-size:0.9rem;">${safeSymbol}</span>
+        <span style="color:rgba(255,255,255,0.35);font-size:0.8rem;margin-left:0.5rem;">${safeName !== safeSymbol ? safeName : ''}</span>
       </div>
     </div>
   `;
@@ -508,7 +510,7 @@ async function runAIAnalysis() {
 
     renderResult(asset, tf, data);
   } catch (e) {
-    alert('Ошибка: ' + e.message);
+    showToast('Ошибка: ' + e.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Анализировать`;
@@ -517,10 +519,10 @@ async function runAIAnalysis() {
 
 function renderResult(asset, tf, data) {
   const isLong = data.signal === 'LONG';
-  document.getElementById('aiSignalLabel').textContent = data.signal;
+  document.getElementById('aiSignalLabel').textContent = escapeHtml(data.signal);
   document.getElementById('aiSignalLabel').style.color = isLong ? '#22c55e' : '#ef4444';
   document.getElementById('aiSignalCard').style.borderColor = isLong ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)';
-  document.getElementById('aiSignalAsset').textContent = `${asset} / ${tf}`;
+  document.getElementById('aiSignalAsset').textContent = `${escapeHtml(asset)} / ${escapeHtml(tf)}`;
   document.getElementById('aiConfidenceValue').textContent = `${data.confidence}%`;
   document.getElementById('aiProgressBar').style.width = `${data.confidence}%`;
   document.getElementById('aiProgressBar').style.background = data.confidence > 70 ? '#22c55e' : '#eab308';
@@ -559,8 +561,8 @@ function renderDetailSections(data) {
     const c = accentColors[s.accent];
     return `
       <div class="ai-detail-section" style="background:${c.bg};border:1px solid ${c.border};">
-        <div class="ai-detail-section-title" style="color:${c.icon};">${s.icon} ${s.title}</div>
-        <p class="ai-detail-section-text">${s.text}</p>
+        <div class="ai-detail-section-title" style="color:${c.icon};">${s.icon} ${escapeHtml(s.title)}</div>
+        <p class="ai-detail-section-text">${escapeHtml(s.text)}</p>
       </div>
     `;
   }).join('');
@@ -649,11 +651,11 @@ function renderHistory() {
       <tbody>
         ${analysisHistory.map((row, idx) => `
           <tr>
-            <td><strong>${row.asset}</strong></td>
-            <td style="color:rgba(255,255,255,0.5)">${row.tf}</td>
-            <td style="color:${row.data.signal === 'LONG' ? '#22c55e' : '#ef4444'};font-weight:600">${row.data.signal}</td>
+            <td><strong>${escapeHtml(row.asset)}</strong></td>
+            <td style="color:rgba(255,255,255,0.5)">${escapeHtml(row.tf)}</td>
+            <td style="color:${row.data.signal === 'LONG' ? '#22c55e' : '#ef4444'};font-weight:600">${escapeHtml(row.data.signal)}</td>
             <td>${row.data.confidence}%</td>
-            <td style="color:rgba(255,255,255,0.4);font-size:0.82rem">${row.time}</td>
+            <td style="color:rgba(255,255,255,0.4);font-size:0.82rem">${escapeHtml(row.time)}</td>
             <td><button class="ai-history-btn" onclick="showHistoryResult(${idx})">Анализ</button></td>
           </tr>
         `).join('')}
@@ -688,8 +690,8 @@ function showHistoryResult(idx) {
   const sectionsHTML = sections.map(s => {
     const c = accentColors[s.accent];
     return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:10px;padding:1rem 1.25rem;margin-bottom:0.75rem;">
-      <div style="color:rgba(255,255,255,0.7);font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:600;margin-bottom:0.4rem;">${s.title}</div>
-      <p style="font-size:0.9rem;color:rgba(255,255,255,0.75);line-height:1.65;margin:0;">${s.text}</p>
+      <div style="color:rgba(255,255,255,0.7);font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:600;margin-bottom:0.4rem;">${escapeHtml(s.title)}</div>
+      <p style="font-size:0.9rem;color:rgba(255,255,255,0.75);line-height:1.65;margin:0;">${escapeHtml(s.text)}</p>
     </div>`;
   }).join('');
 
@@ -704,9 +706,9 @@ function showHistoryResult(idx) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;">
         <div>
           <div style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700;color:#fff;">
-            ${row.asset} / ${row.tf} <span style="color:${isLong ? '#22c55e' : '#ef4444'}">${data.signal}</span>
+            ${escapeHtml(row.asset)} / ${escapeHtml(row.tf)} <span style="color:${isLong ? '#22c55e' : '#ef4444'}">${escapeHtml(data.signal)}</span>
           </div>
-          <div style="font-size:0.8rem;color:rgba(255,255,255,0.35);margin-top:0.2rem;">${row.time}</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.35);margin-top:0.2rem;">${escapeHtml(row.time)}</div>
         </div>
         <button onclick="document.getElementById('aiHistoryModal').remove()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;width:32px;height:32px;cursor:pointer;color:rgba(255,255,255,0.6);font-size:1.1rem;display:flex;align-items:center;justify-content:center;">✕</button>
       </div>

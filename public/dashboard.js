@@ -5,22 +5,14 @@
 // Текущая страница
 let currentPage = 'dashboard';
 
-// ===== JWT Auth Helper =====
-function getToken() {
-  return localStorage.getItem('token');
-}
-
-function authHeaders() {
-  const token = getToken();
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': token ? `Bearer ${token}` : '',
-  };
-}
-
-// Универсальный fetch с авторизацией
+// Универсальный fetch с авторизацией (signed httpOnly cookies + CSRF)
 async function apiFetch(url, options = {}) {
-  const headers = authHeaders();
+  options.credentials = 'include';
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+  };
   if (options.headers) Object.assign(headers, options.headers);
   options.headers = headers;
 
@@ -28,7 +20,6 @@ async function apiFetch(url, options = {}) {
 
   // Если 401 — токен невалидный, выкидываем на логин
   if (response.status === 401) {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/';
     throw new Error('Unauthorized');
@@ -47,24 +38,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Проверка авторизации
 function checkAuth() {
-  const token = getToken();
   const user = localStorage.getItem('user');
-  
-  if (!token || !user) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  if (!user) {
     window.location.href = '/';
   }
 }
 
 // Загрузка информации о пользователе
 function loadUserInfo() {
-  const userJson = localStorage.getItem('user');
-  
-  if (userJson) {
-    const user = JSON.parse(userJson);
-    document.getElementById('userName').textContent = user.name;
-    document.getElementById('userEmail').textContent = user.email;
+  try {
+    const userJson = localStorage.getItem('user');
+    if (userJson) {
+      const user = JSON.parse(userJson);
+      document.getElementById('userName').textContent = user.name || '';
+      document.getElementById('userEmail').textContent = user.email || '';
+    }
+  } catch (e) {
+    // Повреждённые данные — сбрасываем
+    localStorage.removeItem('user');
+    window.location.href = '/';
   }
 }
 
@@ -83,10 +75,14 @@ function toggleSidebar() {
   }
 }
 
-// Выход
-function handleLogout() {
+// Выход — clear cookie server-side + clear localStorage
+async function handleLogout() {
   if (confirm('Вы уверены, что хотите выйти?')) {
-    localStorage.removeItem('token');
+    try {
+      await fetch('/api/auth/logout', { credentials: 'include' });
+    } catch (e) {
+      // ignore network errors on logout
+    }
     localStorage.removeItem('user');
     window.location.href = '/';
   }
@@ -115,8 +111,23 @@ function setupNavigation() {
   });
 }
 
+// ===== Cleanup function to prevent memory leaks =====
+function cleanupCurrentPage() {
+  if (typeof aiRefreshInterval !== 'undefined' && aiRefreshInterval) {
+    clearInterval(aiRefreshInterval);
+    aiRefreshInterval = null;
+  }
+  if (typeof profitChartInstance !== 'undefined' && profitChartInstance) {
+    profitChartInstance.destroy();
+    profitChartInstance = null;
+  }
+  document.removeEventListener('click', handleAssetDropdownClose);
+}
+
 // Загрузка страницы
 function loadPage(page) {
+  cleanupCurrentPage();
+  
   currentPage = page;
   const contentArea = document.getElementById('contentArea');
   const pageTitle = document.querySelector('.page-title');

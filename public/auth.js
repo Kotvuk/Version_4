@@ -30,6 +30,16 @@ function togglePassword(inputId) {
   }
 }
 
+// Simple toast for auth page (standalone since common.js is not loaded here)
+function showAuthToast(message, type = 'error') {
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:24px;right:24px;padding:12px 20px;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.9rem;z-index:9999;opacity:0;transform:translateY(-10px);transition:all 0.3s ease;${type === 'error' ? 'background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);' : 'background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);'}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; }, 10);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-10px)'; setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
 // Обработка формы входа
 async function handleLogin(event) {
   event.preventDefault();
@@ -40,22 +50,22 @@ async function handleLogin(event) {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, password })
     });
     
     const data = await response.json();
     
     if (response.ok && data.success) {
-      // Сохраняем JWT токен и user
-      localStorage.setItem('token', data.token);
+      // Сохраняем user info (token хранится в httpOnly cookie сервером)
       localStorage.setItem('user', JSON.stringify(data.user));
       window.location.href = '/dashboard.html';
     } else {
-      alert(data.error || 'Ошибка входа');
+      showAuthToast(data.error || 'Ошибка входа');
     }
   } catch (error) {
     console.error('Ошибка:', error);
-    alert('Ошибка подключения к серверу');
+    showAuthToast('Ошибка подключения к серверу');
   }
 }
 
@@ -68,12 +78,12 @@ async function handleRegister(event) {
   const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
   
   if (password !== passwordConfirm) {
-    alert('Пароли не совпадают!');
+    showAuthToast('Пароли не совпадают!');
     return;
   }
   
   if (password.length < 6) {
-    alert('Пароль должен содержать минимум 6 символов!');
+    showAuthToast('Пароль должен содержать минимум 6 символов!');
     return;
   }
   
@@ -81,21 +91,21 @@ async function handleRegister(event) {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ name, email, password })
     });
     
     const data = await response.json();
     
     if (response.ok && data.success) {
-      // Сохраняем JWT токен и user — сразу входим
-      localStorage.setItem('token', data.token);
+      // Сохраняем user info (token хранится в httpOnly cookie сервером)
       localStorage.setItem('user', JSON.stringify(data.user));
       window.location.href = '/dashboard.html';
     } else {
-      alert(data.error || 'Ошибка регистрации');
+      showAuthToast(data.error || 'Ошибка регистрации');
     }
   } catch (error) {
     console.error('Ошибка:', error);
-    alert('Ошибка подключения к серверу');
+    showAuthToast('Ошибка подключения к серверу');
   }
 }

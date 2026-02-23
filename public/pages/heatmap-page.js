@@ -62,8 +62,8 @@ function renderHeatmap() {
       <div class="heatmap-cell"
         style="flex:${pct};min-width:${Math.max(60, pct * 1.5)}px;min-height:${Math.max(60, pct * 1.2)}px;
                background:${color};animation:cellPop 0.5s ease ${i * 0.05}s both;cursor:default;"
-        title="${a.symbol}: ${up ? '+' : ''}${a.change}%">
-        <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(0.7rem,1.2vw,1rem);color:${textColor};">${a.symbol}</p>
+        title="${escapeHtml(a.symbol)}: ${up ? '+' : ''}${a.change}%">
+        <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(0.7rem,1.2vw,1rem);color:${textColor};">${escapeHtml(a.symbol)}</p>
         <p style="font-size:clamp(0.65rem,1vw,0.85rem);color:${textColor};opacity:0.9;font-weight:600;">${up ? '+' : ''}${a.change}%</p>
       </div>
     `;

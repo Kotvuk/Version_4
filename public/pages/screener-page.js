@@ -92,11 +92,11 @@ function renderScreenerTable() {
         <td>
           <div class="screener-asset">
             <div class="screener-icon" style="background:${assetColor(a.symbol)}22;color:${assetColor(a.symbol)};">
-              ${a.symbol.slice(0, 1)}
+              ${escapeHtml(a.symbol.slice(0, 1))}
             </div>
             <div>
-              <p style="font-weight:600;color:#fff;font-size:0.9rem;">${a.symbol}</p>
-              <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);">${a.name}</p>
+              <p style="font-weight:600;color:#fff;font-size:0.9rem;">${escapeHtml(a.symbol)}</p>
+              <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);">${escapeHtml(a.name)}</p>
             </div>
           </div>
         </td>
@@ -108,7 +108,7 @@ function renderScreenerTable() {
             ${up ? '▲' : '▼'} ${pct.toFixed(2)}%
           </span>
         </td>
-        <td style="color:rgba(255,255,255,0.6);font-size:0.88rem;">$${a.vol}</td>
+        <td style="color:rgba(255,255,255,0.6);font-size:0.88rem;">$${escapeHtml(a.vol)}</td>
         <td>
           <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:rgba(255,255,255,0.4);">
             <span>$${a.low < 1 ? a.low.toFixed(4) : a.low.toFixed(2)}</span>

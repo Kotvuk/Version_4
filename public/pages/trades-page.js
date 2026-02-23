@@ -89,11 +89,11 @@ function renderAccountSwitcher(accounts) {
     btn.className = 'account-btn' + (active ? ' active' : '');
     btn.dataset.accountId = account.id;
     btn.innerHTML = `
-      <div class="account-btn-icon ${account.account_type}">
+      <div class="account-btn-icon ${escapeHtml(account.account_type)}">
         ${account.account_type === 'user' ? '👤' : '🤖'}
       </div>
       <div class="account-btn-info">
-        <p class="account-btn-name">${account.name}</p>
+        <p class="account-btn-name">${escapeHtml(account.name)}</p>
         <p class="account-btn-type">${account.account_type === 'user' ? 'Пользовательский' : 'ИИ'}</p>
       </div>
     `;
@@ -175,9 +175,9 @@ function openEditBalanceModal(preselectedId) {
 
   const accountTabs = _allAccounts.map(a => `
     <button class="modal-account-tab ${a.id === accountId ? 'active' : ''}"
-      data-id="${a.id}" data-balance="${a.balance}" data-name="${a.name}"
+      data-id="${a.id}" data-balance="${a.balance}" data-name="${escapeHtml(a.name)}"
       onclick="switchModalAccount(${a.id})">
-      👤 ${a.name}
+      👤 ${escapeHtml(a.name)}
       <span style="font-size:0.75rem;opacity:0.6;margin-left:6px;">$${a.balance.toFixed(2)}</span>
     </button>
   `).join('');
@@ -267,10 +267,10 @@ async function saveBalanceFromModal() {
       modal.remove();
       loadAccountData(currentDemoAccountId);
     } else {
-      alert('Ошибка: ' + data.error);
+      showToast('Ошибка: ' + data.error);
     }
   } catch (err) {
-    alert('Ошибка соединения');
+    showToast('Ошибка соединения');
   }
 }
 
@@ -282,7 +282,7 @@ function openAddTradeModal() {
   if (old) old.remove();
 
   const accountOptions = _allAccounts.map(a =>
-    `<option value="${a.id}" ${a.id == currentDemoAccountId ? 'selected' : ''}>${a.account_type === 'user' ? '👤' : '🤖'} ${a.name}</option>`
+    `<option value="${a.id}" ${a.id == currentDemoAccountId ? 'selected' : ''}>${a.account_type === 'user' ? '👤' : '🤖'} ${escapeHtml(a.name)}</option>`
   ).join('');
 
   const S = `width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:0.65rem 1rem;color:#fff;font-size:0.9rem;outline:none;font-family:'Inter',sans-serif;box-sizing:border-box;`;
@@ -376,7 +376,7 @@ function filterAssets(query) {
   if (filtered.length === 0) { dd.style.display = 'none'; return; }
   dd.style.display = 'block';
   dd.innerHTML = filtered.map(a => `
-    <div onclick="selectAsset('${a}')" style="padding:0.6rem 1rem;cursor:pointer;color:#e0e0e0;font-size:0.9rem;font-family:'Inter',sans-serif;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='transparent'">${a}</div>
+    <div onclick="selectAsset('${escapeHtml(a)}')" style="padding:0.6rem 1rem;cursor:pointer;color:#e0e0e0;font-size:0.9rem;font-family:'Inter',sans-serif;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='transparent'">${escapeHtml(a)}</div>
   `).join('');
 }
 
@@ -439,10 +439,10 @@ async function submitAddTrade() {
       modal.remove();
       loadAccountData(currentDemoAccountId);
     } else {
-      alert('Ошибка: ' + data.error);
+      showToast('Ошибка: ' + data.error);
     }
   } catch (err) {
-    alert('Ошибка соединения');
+    showToast('Ошибка соединения');
   }
 }
 
@@ -471,8 +471,8 @@ function renderTradesTable(trades) {
     return `
       <tr>
         <td>#${trade.id}</td>
-        <td><strong>${trade.symbol}</strong></td>
-        <td><span class="trade-type ${trade.type}">${trade.type === 'buy' ? 'LONG' : 'SHORT'}</span></td>
+        <td><strong>${escapeHtml(trade.symbol)}</strong></td>
+        <td><span class="trade-type ${escapeHtml(trade.type)}">${trade.type === 'buy' ? 'LONG' : 'SHORT'}</span></td>
         <td>${trade.amount}</td>
         <td>$${trade.entry_price.toFixed(2)}</td>
         <td>${trade.exit_price ? '$' + trade.exit_price.toFixed(2) : '—'}</td>

@@ -1,6 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const { DEFAULT_BALANCE, BCRYPT_ROUNDS } = require('./utils/constants');
 
 // Создание и подключение к базе данных
 const db = new sqlite3.Database(path.join(__dirname, 'kotvukai.db'), (err) => {
@@ -40,7 +41,12 @@ function dbAll(sql, params = []) {
 }
 
 // ===== Создание таблиц =====
+// ВАЖНО: CREATE TABLE IF NOT EXISTS не изменит существующие таблицы.
+// Если таблицы уже существуют без CHECK/CASCADE — удалите kotvukai.db и перезапустите.
 db.serialize(() => {
+  // Enable foreign keys
+  db.run('PRAGMA foreign_keys = ON');
+
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,10 +66,10 @@ db.serialize(() => {
       user_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       account_type TEXT NOT NULL,
-      balance REAL DEFAULT 10000,
-      initial_balance REAL DEFAULT 10000,
+      balance REAL DEFAULT 10000 CHECK(balance >= 0),
+      initial_balance REAL DEFAULT 10000 CHECK(initial_balance > 0),
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `, (err) => {
     if (err) console.error('❌ Ошибка создания таблицы demo_accounts:', err);
@@ -78,7 +84,7 @@ db.serialize(() => {
       timeframe TEXT NOT NULL,
       is_active INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `, (err) => {
     if (err) console.error('❌ Ошибка создания таблицы charts:', err);
@@ -94,8 +100,8 @@ db.serialize(() => {
       confidence REAL,
       is_correct INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (chart_id) REFERENCES charts(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (chart_id) REFERENCES charts(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `, (err) => {
     if (err) console.error('❌ Ошибка создания таблицы analyses:', err);
@@ -109,32 +115,46 @@ db.serialize(() => {
       user_id INTEGER NOT NULL,
       symbol TEXT NOT NULL,
       type TEXT NOT NULL,
-      entry_price REAL NOT NULL,
+      entry_price REAL NOT NULL CHECK(entry_price > 0),
       exit_price REAL,
-      amount REAL NOT NULL,
+      amount REAL NOT NULL CHECK(amount > 0),
       profit REAL DEFAULT 0,
       status TEXT DEFAULT 'open',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       closed_at DATETIME,
-      FOREIGN KEY (demo_account_id) REFERENCES demo_accounts(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (demo_account_id) REFERENCES demo_accounts(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `, (err) => {
     if (err) console.error('❌ Ошибка создания таблицы trades:', err);
     else console.log('✅ Таблица trades готова');
   });
+
+  // ===== Indexes =====
+  db.run('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_demo_accounts_user_id ON demo_accounts(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_trades_demo_account_id ON trades(demo_account_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_trades_user_id ON trades(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_trades_status ON trades(status)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_analyses_user_id ON analyses(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_charts_user_id ON charts(user_id)');
 });
 
-// Создание администратора
+// Создание администратора из env vars
 async function createAdminUser() {
-  const adminEmail = 'admin@corp.kz';
-  const adminPassword = 'AdminDamir';
-  const adminName = 'Administrator';
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminName = process.env.ADMIN_NAME;
+
+  if (!adminEmail || !adminPassword || !adminName) {
+    console.log('ℹ️  ADMIN_EMAIL/ADMIN_PASSWORD/ADMIN_NAME не заданы — администратор не создан');
+    return;
+  }
 
   try {
     const row = await dbGet('SELECT * FROM users WHERE email = ?', [adminEmail]);
     if (!row) {
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      const hashedPassword = await bcrypt.hash(adminPassword, BCRYPT_ROUNDS);
       await dbRun('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [adminName, adminEmail, hashedPassword]);
       console.log('✅ Администратор создан:', adminEmail);
     } else {
@@ -145,9 +165,15 @@ async function createAdminUser() {
   }
 }
 
+// ===== Account ownership verification =====
+async function verifyAccountOwnership(accountId, userId) {
+  const account = await dbGet('SELECT * FROM demo_accounts WHERE id = ? AND user_id = ?', [accountId, userId]);
+  return account;
+}
+
 // ===== Регистрация =====
 async function registerUser(name, email, password) {
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
   try {
     const result = await dbRun('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, hashedPassword]);
     return { id: result.lastID, name, email };
@@ -170,7 +196,7 @@ async function loginUser(email, password) {
   return { id: user.id, name: user.name, email: user.email };
 }
 
-// ===== Статистика дашборда (async/await вместо callback hell) =====
+// ===== Статистика дашборда =====
 async function getDashboardStats(userId) {
   const balanceRow = await dbGet('SELECT SUM(balance) as total_balance FROM demo_accounts WHERE user_id = ?', [userId]);
   const balance = (balanceRow && balanceRow.total_balance) ? balanceRow.total_balance : 0;
@@ -218,9 +244,9 @@ async function getProfitChartData(userId, days) {
 // ===== Демо-счета =====
 async function createDemoAccounts(userId) {
   await dbRun('INSERT INTO demo_accounts (user_id, name, account_type, balance, initial_balance) VALUES (?, ?, ?, ?, ?)',
-    [userId, 'Мой демо-счёт', 'user', 10000, 10000]);
+    [userId, 'Мой демо-счёт', 'user', DEFAULT_BALANCE, DEFAULT_BALANCE]);
   await dbRun('INSERT INTO demo_accounts (user_id, name, account_type, balance, initial_balance) VALUES (?, ?, ?, ?, ?)',
-    [userId, 'ИИ демо-счёт', 'ai', 10000, 10000]);
+    [userId, 'ИИ демо-счёт', 'ai', DEFAULT_BALANCE, DEFAULT_BALANCE]);
 }
 
 async function getDemoAccounts(userId) {
@@ -246,15 +272,16 @@ async function getDemoAccountTrades(accountId) {
   return await dbAll('SELECT * FROM trades WHERE demo_account_id = ? ORDER BY created_at DESC', [accountId]);
 }
 
+// Fix: do NOT update initial_balance
 async function updateUserAccountBalance(accountId, newBalance) {
   const account = await dbGet('SELECT * FROM demo_accounts WHERE id = ?', [accountId]);
   if (!account) throw new Error('Счёт не найден');
 
-  await dbRun('UPDATE demo_accounts SET balance = ?, initial_balance = ? WHERE id = ?', [newBalance, newBalance, accountId]);
+  await dbRun('UPDATE demo_accounts SET balance = ? WHERE id = ?', [newBalance, accountId]);
   return { updated: true };
 }
 
-// ===== Добавление сделки (перенесено из server.js) =====
+// ===== Добавление сделки =====
 async function addTrade(accountId, { symbol, type, amount, entry_price, exit_price, profit, status }) {
   const account = await dbGet('SELECT user_id FROM demo_accounts WHERE id = ?', [accountId]);
   if (!account) throw new Error('Счёт не найден');
@@ -286,4 +313,5 @@ module.exports = {
   getDemoAccountTrades,
   updateUserAccountBalance,
   addTrade,
+  verifyAccountOwnership,
 };
