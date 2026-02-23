@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KotvukAI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="auth-wrapper">
+      <div class="auth-header">
+        <h1>KotvukAI</h1>
+      </div>
+
+      <!-- Форма входа -->
+      <div class="auth-form" id="loginForm">
+        <h2>Вход</h2>
+        <form onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" required placeholder="your@email.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="loginPassword">Пароль</label>
+            <div class="password-wrapper">
+              <input type="password" id="loginPassword" required placeholder="Введите пароль">
+              <button type="button" class="toggle-password" onclick="togglePassword('loginPassword')">
+                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle class="eye-open" cx="12" cy="12" r="3"/>
+                  <line class="eye-closed" x1="1" y1="1" x2="23" y2="23" style="display:none;"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary">Войти</button>
+        </form>
+
+        <p class="form-footer">
+          Нет аккаунта? <a href="#" onclick="switchForm('register')">Зарегистрироваться</a>
+        </p>
+      </div>
+
+      <!-- Форма регистрации -->
+      <div class="auth-form hidden" id="registerForm">
+        <h2>Регистрация</h2>
+        <form onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label for="registerName">Имя</label>
+            <input type="text" id="registerName" required placeholder="Ваше имя">
+          </div>
+
+          <div class="form-group">
+            <label for="registerEmail">Email</label>
+            <input type="email" id="registerEmail" required placeholder="your@email.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="registerPassword">Пароль</label>
+            <div class="password-wrapper">
+              <input type="password" id="registerPassword" required placeholder="Минимум 6 символов">
+              <button type="button" class="toggle-password" onclick="togglePassword('registerPassword')">
+                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle class="eye-open" cx="12" cy="12" r="3"/>
+                  <line class="eye-closed" x1="1" y1="1" x2="23" y2="23" style="display:none;"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="registerPasswordConfirm">Подтвердите пароль</label>
+            <div class="password-wrapper">
+              <input type="password" id="registerPasswordConfirm" required placeholder="Повторите пароль">
+              <button type="button" class="toggle-password" onclick="togglePassword('registerPasswordConfirm')">
+                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle class="eye-open" cx="12" cy="12" r="3"/>
+                  <line class="eye-closed" x1="1" y1="1" x2="23" y2="23" style="display:none;"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary">Зарегистрироваться</button>
+        </form>
+
+        <p class="form-footer">
+          Уже есть аккаунт? <a href="#" onclick="switchForm('login')">Войти</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+</body>
+</html>
